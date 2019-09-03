@@ -45,6 +45,9 @@ public class Passenger : MVRScript
     private Quaternion _startRotationOffset;
     private RigidbodyInterpolation _previousInterpolation;
     private float _previousWorldScale;
+    private FreeControllerV3 _followerController;
+    private float _previousFollowerSpring;
+    private float _previousFollowerDamper;
 
     public override void Init()
     {
@@ -224,9 +227,8 @@ public class Passenger : MVRScript
         _previousPosition = navigationRig.position;
         _previousPlayerHeight = superController.playerHeightAdjust;
 
-        var rigidBody = _link.GetComponent<Rigidbody>();
-        _previousInterpolation = rigidBody.interpolation;
-        rigidBody.interpolation = RigidbodyInterpolation.Interpolate;
+        _previousInterpolation = _link.interpolation;
+        _link.interpolation = RigidbodyInterpolation.Interpolate;
 
         var offsetStartRotation = !superController.MonitorRig.gameObject.activeSelf;
         if (offsetStartRotation)
@@ -235,8 +237,21 @@ public class Passenger : MVRScript
         ApplyWorldScale();
         UpdateRotation(navigationRig, 0);
         MoveToStartingPosition(navigationRig, GetTargetPosition(navigationRig));
+        AdjustFollower();
 
         _active = true;
+    }
+
+    private void AdjustFollower()
+    {
+        if (_follower == null)
+            return;
+
+        _followerController = _follower.gameObject.GetComponent<FreeControllerV3>();
+        _previousFollowerSpring = _followerController.RBHoldRotationSpring;
+        _previousFollowerDamper = _followerController.RBHoldRotationDamper;
+        _followerController.SetHoldRotationSpringPercent(0);
+        _followerController.SetHoldRotationDamperPercent(100);
     }
 
     private void ApplyWorldScale()
@@ -273,6 +288,13 @@ public class Passenger : MVRScript
         _currentPositionVelocity = Vector3.zero;
         _currentRotationVelocity = Quaternion.identity;
         _startRotationOffset = Quaternion.identity;
+
+        if (_followerController != null)
+        {
+            _followerController.RBHoldRotationSpring = _previousFollowerSpring;
+            _followerController.RBHoldRotationDamper = _previousFollowerDamper;
+            _followerController = null;
+        }
 
         _active = false;
     }
