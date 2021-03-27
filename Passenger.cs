@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -56,6 +57,8 @@ public class Passenger : MVRScript
 
             if (_activeJSON.val)
                 Activate();
+
+            SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
         }
         catch (Exception e)
         {
@@ -452,5 +455,17 @@ public class Passenger : MVRScript
         if (improvedPoVStorableID == null) return null;
         var improvedPoVStorable = containingAtom.GetStorableByID(improvedPoVStorableID);
         return improvedPoVStorable?.GetBoolJSONParam("Activate only when possessed");
+    }
+
+    public void OnBindingsListRequested(List<object> bindings)
+    {
+        bindings.Add(new Dictionary<string, string>
+        {
+            {"Namespace", "Passenger"}
+        });
+        bindings.Add(new JSONStorableAction("ToggleActive", () =>
+        {
+            _activeJSON.val = !_activeJSON.val;
+        }));
     }
 }
