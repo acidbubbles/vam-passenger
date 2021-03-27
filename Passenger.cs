@@ -85,6 +85,12 @@ public class Passenger : MVRScript
 
         _activeJSON = new JSONStorableBool("Active", false, val =>
         {
+            if (!enabled)
+            {
+                _activeJSON.valNoCallback = false;
+                return;
+            }
+
             if (val)
                 Activate();
             else
@@ -383,15 +389,33 @@ public class Passenger : MVRScript
         return true;
     }
 
+    public void OnEnable()
+    {
+#if(VAM_GT_1_20_77_0)
+        SuperController.singleton.onBeforeSceneSaveHandlers += OnBeforeSceneSave;
+#endif
+    }
+
     public void OnDisable()
     {
         try
         {
-            Deactivate();
+#if(VAM_GT_1_20_77_0)
+            SuperController.singleton.onBeforeSceneSaveHandlers -= OnBeforeSceneSave;
+#endif
+            _activeJSON.val = false;
         }
         catch (Exception e)
         {
             SuperController.LogError("Failed to disable: " + e);
+        }
+    }
+
+    private void OnBeforeSceneSave()
+    {
+        if (_activeJSON.val)
+        {
+            _activeJSON.val = false;
         }
     }
 
