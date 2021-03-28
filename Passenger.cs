@@ -414,6 +414,11 @@ public class Passenger : MVRScript
         }
     }
 
+    public void OnDestroy()
+    {
+        SuperController.singleton.BroadcastMessage("OnActionsProviderDestroyed", this, SendMessageOptions.DontRequireReceiver);
+    }
+
     private void OnBeforeSceneSave()
     {
         if (_activeJSON.val)
